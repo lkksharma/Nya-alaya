@@ -1,0 +1,40 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*$py.class
+.python-version
+
+# Virtual environments
+venv/
+.env/
+.venv/
+djenv/
+*.egg-info/
+
+# macOS
+.DS_Store
+
+# Editor/IDE
+.vscode/
+.idea/
+
+# Django
+db.sqlite3
+media/
+staticfiles/
+*.log
+
+# Test/coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Local settings / secrets
+.env*
+OPENAI_API_KEY
+
+# Caches
+.cache/
+.mypy_cache/
+.pyre/
+.pytype/
