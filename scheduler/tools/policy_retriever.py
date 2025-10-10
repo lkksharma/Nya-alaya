@@ -20,7 +20,14 @@ def retrieve_policies(query: str, top_k: int = 3):
     q_emb = embed_text(query)
     results = []
     for p in Policy.objects.all():
-        sim = cosine_similarity(p.embedding, q_emb)
-        results.append((p, sim))
+        # Skip policies with empty embeddings
+        if not p.embedding or len(p.embedding) == 0:
+            continue
+        try:
+            sim = cosine_similarity(p.embedding, q_emb)
+            results.append((p, sim))
+        except (ValueError, ZeroDivisionError):
+            # Skip invalid embeddings
+            continue
     results.sort(key=lambda x: x[1], reverse=True)
     return results[:top_k]

@@ -11,4 +11,6 @@ router.register(r"schedules", ScheduleViewSet)
 urlpatterns = [
     path("health/", health_check),
     path('', include(router.urls)),
+    path("dashboard/", dashboard, name="dashboard"),
+    path("regenerate/", regenerate, name="regenerate"),
 ]

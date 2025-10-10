@@ -1,0 +1,61 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* Government of India inspired colors */
+  --primary: #1a4d8f; /* Deep blue - authority */
+  --primary-dark: #0d2847;
+  --primary-light: #2868b8;
+  --secondary: #ff9933; /* Saffron */
+  --tertiary: #138808; /* Green */
+  --accent: #000080; /* Navy blue */
+  --gold: #d4af37;
+  
+  /* Neutral colors */
+  --bg-primary: #f8f9fa;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --border: #e0e0e0;
+  --shadow: rgba(0, 0, 0, 0.1);
+  
+  /* Status colors */
+  --success: #138808;
+  --warning: #ff9933;
+  --danger: #c41e3a;
+  --info: #1a4d8f;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+.app-container {
+  min-height: 100vh;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-dark);
+}

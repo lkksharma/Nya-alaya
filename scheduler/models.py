@@ -2,19 +2,43 @@ from django.db import models
 
 # Create your models here.
 class Judge(models.Model):
+    SPECIALIZATIONS = [
+        ("criminal", "Criminal Law"),
+        ("civil", "Civil Law"),
+        ("family", "Family Law"),
+        ("commercial", "Commercial Law"),
+        ("general", "General Practice"),
+    ]
+    
     name = models.CharField(max_length=255)
     court = models.CharField(max_length=255)
-    availability = models.JSONField(default = list)
+    specialization = models.CharField(max_length=50, choices=SPECIALIZATIONS, default="general")
+    experience_years = models.IntegerField(default=0)
+    max_daily_cases = models.IntegerField(default=8)
+    availability = models.JSONField(default=list)
+    working_hours = models.JSONField(default=dict)  # 3:30 PM to 7:00 PM
 
     def __str__(self):
-        return f"{self.name} ( {self.court} )"
+        return f"{self.name} ({self.court} - {self.specialization})"
 
 class Lawyer(models.Model):
+    SPECIALIZATIONS = [
+        ("criminal", "Criminal Law"),
+        ("civil", "Civil Law"),
+        ("family", "Family Law"),
+        ("corporate", "Corporate Law"),
+        ("general", "General Practice"),
+    ]
+    
     name = models.CharField(max_length=255)
-    busy_slots = models.JSONField(default = list)
+    specialization = models.CharField(max_length=50, choices=SPECIALIZATIONS, default="general")
+    experience_years = models.IntegerField(default=0)
+    hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    busy_slots = models.JSONField(default=list)
+    max_cases = models.IntegerField(default=10)  # Max concurrent cases
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.specialization})"
 
 class Case(models.Model):
     CASE_TYPES = [
@@ -25,11 +49,12 @@ class Case(models.Model):
     ]
 
     case_number = models.CharField(max_length=50, unique=True)
-    case_type = models.CharField(max_length=50, choices = CASE_TYPES)
+    case_type = models.CharField(max_length=50, choices=CASE_TYPES)
+    description = models.TextField(blank=True, default='')  # NEW: Case description
     filed_in = models.DateField()
-    urgency = models.FloatField(default = 0.5)
-    estimated_duration = models.IntegerField(default = 60)
-    priority = models.FloatField(default = 0.0)
+    urgency = models.FloatField(default=0.5)
+    estimated_duration = models.IntegerField(default=60)
+    priority = models.FloatField(default=0.0)
     assigned_judge = models.ForeignKey(Judge, on_delete=models.SET_NULL, null=True, blank=True)
     lawyers = models.ManyToManyField(Lawyer, blank=True)
 
