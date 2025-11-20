@@ -11,9 +11,9 @@ except Exception as e:
     OLLAMA_AVAILABLE = False
     print(f"✗ Failed to import ollama: {type(e).__name__}: {e}")
 
-# Force the model to mistral:7b-instruct
+# Using TinyLlama for better performance on resource-constrained servers
 
-OLLAMA_MODEL = "mistral:7b-instruct"
+OLLAMA_MODEL = "tinyllama"
 
 
 def analyze_case_with_ai(case_number, case_type, description, filed_date):

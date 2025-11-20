@@ -17,10 +17,20 @@ def dashboard(request):
     schedules = Schedule.objects.filter(start_time__date=today).order_by("judge__name", "start_time")
     return render(request, "scheduler/dashboard.html", {"schedules": schedules, "today": today})
 
+@api_view(['GET', 'POST'])
 def regenerate(request):
-    agent = HybridPlannerAgent()
-    agent.run()
-    return redirect("dashboard")
+    try:
+        agent = HybridPlannerAgent()
+        agent.run()
+        return Response({
+            "status": "success",
+            "message": "Schedule regenerated successfully"
+        })
+    except Exception as e:
+        return Response({
+            "status": "error",
+            "message": str(e)
+        }, status=500)
 
 class JudgeViewSet(viewsets.ModelViewSet):
     queryset = Judge.objects.all()
@@ -31,6 +41,9 @@ class CaseViewSet(viewsets.ModelViewSet):
     serializer_class = CaseSerializer
 
     def perform_create(self, serializer):
+        import json
+        from datetime import datetime
+        
         case = serializer.save()
         
         ai_analysis = analyze_case_with_ai(
@@ -40,12 +53,28 @@ class CaseViewSet(viewsets.ModelViewSet):
             filed_date=case.filed_in
         )
         
-
         case.urgency = ai_analysis['urgency']
         case.estimated_duration = ai_analysis['estimated_duration']
         case.priority = calculate_ai_priority(case, ai_analysis)
-
+        case.ai_analysis = ai_analysis  # Save the full AI analysis
         case.save()
+        
+        # Log to file for debugging
+        log_entry = {
+            'timestamp': datetime.now().isoformat(),
+            'case_number': case.case_number,
+            'case_type': case.case_type,
+            'description': case.description,
+            'ai_analysis': ai_analysis,
+            'final_values': {
+                'urgency': case.urgency,
+                'duration': case.estimated_duration,
+                'priority': case.priority
+            }
+        }
+        
+        with open('/tmp/case_ai_analysis.log', 'a') as f:
+            f.write(json.dumps(log_entry, indent=2) + '\n---\n')
         
         print(f"  AI Analysis for {case.case_number}:")
         print(f"  Urgency: {case.urgency}")

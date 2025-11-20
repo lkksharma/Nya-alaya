@@ -22,6 +22,7 @@ class CaseSerializer(serializers.ModelSerializer):
             'urgency': {'required': False, 'read_only': True},
             'estimated_duration': {'required': False, 'read_only': True},
             'priority': {'required': False, 'read_only': True},
+            'ai_analysis': {'required': False, 'read_only': True},
             'description': {'required': False},
         }
 

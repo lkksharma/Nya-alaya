@@ -55,6 +55,7 @@ class Case(models.Model):
     urgency = models.FloatField(default=0.5)
     estimated_duration = models.IntegerField(default=60)
     priority = models.FloatField(default=0.0)
+    ai_analysis = models.JSONField(default=dict, blank=True)  # Store TinyLlama's complete analysis
     assigned_judge = models.ForeignKey(Judge, on_delete=models.SET_NULL, null=True, blank=True)
     lawyers = models.ManyToManyField(Lawyer, blank=True)
     is_resolved = models.BooleanField(default=False)
