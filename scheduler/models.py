@@ -57,6 +57,7 @@ class Case(models.Model):
     priority = models.FloatField(default=0.0)
     assigned_judge = models.ForeignKey(Judge, on_delete=models.SET_NULL, null=True, blank=True)
     lawyers = models.ManyToManyField(Lawyer, blank=True)
+    is_resolved = models.BooleanField(default=False)
 
     def __str__(self):
         return self.case_number

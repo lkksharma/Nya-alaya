@@ -6,8 +6,10 @@ from pathlib import Path
 try:
     import ollama
     OLLAMA_AVAILABLE = True
-except Exception:
+    print("✓ Ollama module imported successfully")
+except Exception as e:
     OLLAMA_AVAILABLE = False
+    print(f"✗ Failed to import ollama: {type(e).__name__}: {e}")
 
 # Force the model to mistral:7b-instruct
 

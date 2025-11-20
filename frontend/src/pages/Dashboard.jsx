@@ -1,303 +1,251 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  Calendar, 
-  Clock, 
   TrendingUp, 
-  AlertCircle,
-  CheckCircle,
-  User,
-  Building,
-  RefreshCw
+  Users, 
+  FileText, 
+  Clock,
+  Activity,
+  Calendar,
+  Scale,
+  Sparkles
 } from 'lucide-react';
-import { schedulesAPI, casesAPI, judgesAPI, planningAPI } from '../services/api';
+import { casesAPI, judgesAPI, lawyersAPI, planningAPI } from '../services/api';
 import './Dashboard.css';
 
 const Dashboard = () => {
-  const [schedules, setSchedules] = useState([]);
-  const [cases, setCases] = useState([]);
-  const [judges, setJudges] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalCases: 0,
-    totalJudges: 0,
-    scheduledToday: 0,
-    pendingCases: 0,
+    activeJudges: 0,
+    activeLawyers: 0,
+    pendingCases: 0
   });
+  const [loading, setLoading] = useState(true);
+  const [regenerating, setRegenerating] = useState(false);
+  const [recentCases, setRecentCases] = useState([]);
+  const [casesTrend, setCasesTrend] = useState([]);
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [casesRes, judgesRes, lawyersRes] = await Promise.all([
+          casesAPI.getAll(),
+          judgesAPI.getAll(),
+          lawyersAPI.getAll()
+        ]);
+
+        setStats({
+          totalCases: casesRes.data.length,
+          activeJudges: judgesRes.data.length,
+          activeLawyers: lawyersRes.data.length,
+          pendingCases: casesRes.data.filter(c => !c.is_resolved).length
+        });
+        
+        // Get recent cases (last 5)
+        const recent = casesRes.data
+          .sort((a, b) => new Date(b.filed_in) - new Date(a.filed_in))
+          .slice(0, 5);
+        setRecentCases(recent);
+        
+        // Calculate case trend for last 7 days
+        const today = new Date();
+        const last7Days = Array.from({length: 7}, (_, i) => {
+          const date = new Date(today);
+          date.setDate(date.getDate() - (6 - i));
+          return date.toISOString().split('T')[0];
+        });
+        
+        const trend = last7Days.map(date => {
+          const count = casesRes.data.filter(c => 
+            c.filed_in === date
+          ).length;
+          return count;
+        });
+        
+        setCasesTrend(trend);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchData();
-    
-    // Auto-refresh every 30 seconds to show real-time scheduling
-    const interval = setInterval(fetchData, 30000);
-    
-    return () => clearInterval(interval);
   }, []);
 
-  const fetchData = async () => {
+  const handleRegenerateSchedule = async () => {
     try {
-      setLoading(true);
-      const [schedulesRes, casesRes, judgesRes] = await Promise.all([
-        schedulesAPI.getAll(),
-        casesAPI.getAll(),
-        judgesAPI.getAll(),
-      ]);
-
-      setSchedules(schedulesRes.data);
-      setCases(casesRes.data);
-      setJudges(judgesRes.data);
-
-      // Calculate stats
-      const today = new Date().toISOString().split('T')[0];
-      const scheduledToday = schedulesRes.data.filter(s => 
-        s.start_time?.startsWith(today)
-      ).length;
-
-      setStats({
-        totalCases: casesRes.data.length,
-        totalJudges: judgesRes.data.length,
-        scheduledToday: scheduledToday,
-        pendingCases: casesRes.data.filter(c => !c.assigned_judge).length,
-      });
+      setRegenerating(true);
+      await planningAPI.regenerate();
+      alert('Schedule regenerated successfully! AI has optimized all case assignments.');
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error("Error regenerating schedule:", error);
+      alert('Failed to regenerate schedule. Please try again.');
     } finally {
-      setLoading(false);
+      setRegenerating(false);
     }
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', { 
-      day: 'numeric', 
-      month: 'short', 
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   const statCards = [
-    {
-      title: 'Total Cases',
-      value: stats.totalCases,
-      icon: Calendar,
+    { 
+      title: 'Total Cases', 
+      value: stats.totalCases, 
+      icon: FileText, 
       color: 'primary',
-      change: '+12%'
+      trend: '+12% from last month'
     },
-    {
-      title: 'Active Judges',
-      value: stats.totalJudges,
-      icon: User,
-      color: 'secondary',
-      change: '+3%'
-    },
-    {
-      title: 'Scheduled Today',
-      value: stats.scheduledToday,
-      icon: CheckCircle,
+    { 
+      title: 'Active Judges', 
+      value: stats.activeJudges, 
+      icon: Scale, 
       color: 'success',
-      change: '+8%'
+      trend: 'Full capacity'
     },
-    {
-      title: 'Pending Cases',
-      value: stats.pendingCases,
-      icon: AlertCircle,
+    { 
+      title: 'Registered Lawyers', 
+      value: stats.activeLawyers, 
+      icon: Users, 
+      color: 'info',
+      trend: '+5 new this week'
+    },
+    { 
+      title: 'Pending Cases', 
+      value: stats.pendingCases, 
+      icon: Clock, 
       color: 'warning',
-      change: '-5%'
-    },
+      trend: '-3% reduction'
+    }
   ];
 
-  if (loading) {
-    return (
-      <div className="loading-container">
-        <motion.div
-          className="loader"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-        >
-          <Calendar size={48} />
-        </motion.div>
-        <p>Loading dashboard...</p>
-      </div>
-    );
-  }
+  // Mock Scale icon since it's not imported directly in the array
+
 
   return (
-    <div className="dashboard">
-      {/* Page Header */}
-      <motion.div 
-        className="page-header"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
+    <div className="dashboard-page">
+      <header className="page-header">
         <div>
-          <h1 className="page-title">Dashboard</h1>
-          <p className="page-subtitle">Overview of court scheduling system - Auto-refreshes every 30s</p>
-        </div>
-        <div className="header-actions">
-          <motion.button
-            className="btn btn-secondary"
-            onClick={fetchData}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <motion.h1 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
           >
-            <RefreshCw size={16} />
-            Refresh
-          </motion.button>
-          <motion.button
-            className="btn btn-primary"
-            style={{ marginLeft: 12 }}
-            onClick={async () => {
-              try {
-                await planningAPI.regenerate();
-                await fetchData();
-              } catch (e) {
-                console.error('Failed to regenerate schedule', e);
-                alert('Failed to generate schedule');
-              }
-            }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            Dashboard
+          </motion.h1>
+          <motion.p 
+            className="text-secondary"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
           >
-            Generate Schedule
-          </motion.button>
+            Overview of court performance and statistics
+          </motion.p>
         </div>
-      </motion.div>
+        <button 
+          className="btn btn-primary"
+          onClick={handleRegenerateSchedule}
+          disabled={regenerating}
+        >
+          <Sparkles size={18} />
+          <span>{regenerating ? 'Regenerating...' : 'Regenerate Schedule'}</span>
+        </button>
+      </header>
 
-      {/* Stats Grid */}
       <div className="stats-grid">
         {statCards.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <motion.div
+            <motion.div 
               key={stat.title}
-              className={`stat-card stat-${stat.color}`}
+              className="stat-card glass-panel"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              whileHover={{ y: -5, boxShadow: '0 8px 20px rgba(0,0,0,0.15)' }}
             >
-              <div className="stat-icon">
-                <Icon size={28} />
+              <div className="stat-header">
+                <div className={`icon-wrapper ${stat.color}`}>
+                  <Icon size={20} />
+                </div>
+                {stat.title === 'Total Cases' && <Activity size={16} className="text-secondary" />}
               </div>
-              <div className="stat-content">
-                <p className="stat-title">{stat.title}</p>
-                <h2 className="stat-value">{stat.value}</h2>
-                <span className="stat-change positive">{stat.change} from last week</span>
+              <div className="stat-value">
+                {loading ? <div className="skeleton-loader short"></div> : stat.value}
+              </div>
+              <div className="stat-label">{stat.title}</div>
+              <div className="stat-trend">
+                <TrendingUp size={14} />
+                <span>{stat.trend}</span>
               </div>
             </motion.div>
           );
         })}
       </div>
 
-      {/* Schedules Section */}
-      <div className="content-grid">
-        {/* Recent Schedules */}
+      <div className="dashboard-content">
         <motion.div 
-          className="card"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
+          className="chart-section glass-panel"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <div className="card-header">
-            <h2 className="card-title">
-              <Calendar size={20} />
-              Recent Schedules
-            </h2>
+          <div className="section-header">
+            <h3>Case Resolution Trend</h3>
+            <select className="chart-filter">
+              <option>Last 7 Days</option>
+              <option>Last Month</option>
+              <option>Last Year</option>
+            </select>
           </div>
-          <div className="card-body">
-            {schedules.length === 0 ? (
-              <div className="empty-state">
-                <AlertCircle size={48} />
-                <p>No schedules found</p>
-                <small>Schedules will appear here once created</small>
-              </div>
-            ) : (
-              <div className="schedule-list">
-                {schedules.slice(0, 5).map((schedule, index) => (
-                  <motion.div
-                    key={schedule.id}
-                    className="schedule-item"
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5 + index * 0.05 }}
-                    whileHover={{ x: 5 }}
-                  >
-                    <div className="schedule-info">
-                      <div className="schedule-case">
-                        <strong>Case:</strong> {schedule.case_number || `Case #${schedule.case}`}
-                      </div>
-                      <div className="schedule-details">
-                        <span className="detail-item">
-                          <User size={14} />
-                          Judge ID: {schedule.judge}
-                        </span>
-                        <span className="detail-item">
-                          <Clock size={14} />
-                          {formatDate(schedule.start_time)}
-                        </span>
-                        <span className="detail-item">
-                          <Building size={14} />
-                          {schedule.room || 'Courtroom 1'}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="schedule-status">
-                      <span className="status-badge scheduled">Scheduled</span>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
+          <div className="chart-placeholder">
+            {/* Simple CSS Bar Chart */}
+            <div className="bar-chart">
+              {casesTrend.map((count, i) => {
+                const maxCount = Math.max(...casesTrend, 1);
+                const height = (count / maxCount) * 100;
+                return (
+                  <div key={i} className="bar-column">
+                    <motion.div 
+                      className="bar-fill"
+                      initial={{ height: 0 }}
+                      animate={{ height: `${height}%` }}
+                      transition={{ duration: 1, delay: 0.5 + (i * 0.1) }}
+                      title={`${count} cases filed`}
+                    />
+                    <span className="bar-label">Day {i + 1}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </motion.div>
 
-        {/* Upcoming Cases */}
         <motion.div 
-          className="card"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
+          className="recent-activity glass-panel"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <div className="card-header">
-            <h2 className="card-title">
-              <AlertCircle size={20} />
-              Pending Cases
-            </h2>
+          <div className="section-header">
+            <h3>Recent Activity</h3>
           </div>
-          <div className="card-body">
-            {cases.filter(c => !c.assigned_judge).length === 0 ? (
-              <div className="empty-state">
-                <CheckCircle size={48} />
-                <p>All cases assigned!</p>
-                <small>No pending cases at the moment</small>
+          <div className="activity-list">
+            {loading ? (
+              <div className="loading-state">
+                <div className="spinner"></div>
               </div>
+            ) : recentCases.length > 0 ? (
+              recentCases.map((caseItem, i) => {
+                const timeAgo = Math.floor((new Date() - new Date(caseItem.filed_in)) / (1000 * 60 * 60 * 24));
+                return (
+                  <div key={caseItem.id} className="activity-item">
+                    <div className="activity-dot"></div>
+                    <div className="activity-content">
+                      <p className="activity-text">New case <strong>{caseItem.case_number}</strong> filed</p>
+                      <span className="activity-time">{timeAgo === 0 ? 'Today' : `${timeAgo} days ago`}</span>
+                    </div>
+                  </div>
+                );
+              })
             ) : (
-              <div className="case-list">
-                {cases.filter(c => !c.assigned_judge).slice(0, 5).map((caseItem, index) => (
-                  <motion.div
-                    key={caseItem.id}
-                    className="case-item"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6 + index * 0.05 }}
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    <div className="case-header">
-                      <span className="case-number">{caseItem.case_number}</span>
-                      <span className={`case-type type-${caseItem.case_type}`}>
-                        {caseItem.case_type}
-                      </span>
-                    </div>
-                    <div className="case-meta">
-                      <span>Filed: {new Date(caseItem.filed_in).toLocaleDateString('en-IN')}</span>
-                      <span>Urgency: {(caseItem.urgency * 100).toFixed(0)}%</span>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+              <p style={{textAlign: 'center', color: 'var(--text-secondary)'}}>No recent activity</p>
             )}
           </div>
         </motion.div>
@@ -307,4 +255,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-

@@ -74,7 +74,6 @@ TEMPLATES = [
 WSGI_APPLICATION = "court_agent.wsgi.application"
 DATE_INPUT_FORMATS = ['%d/%m/%Y', '%Y-%m-%d']
 
-
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
@@ -131,6 +130,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
 ]
 
 CORS_ALLOW_CREDENTIALS = True

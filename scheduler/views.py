@@ -64,7 +64,7 @@ class CaseViewSet(viewsets.ModelViewSet):
             description=case.description,
             filed_date=case.filed_in
         )
-        
+
 
         case.urgency = ai_analysis['urgency']
         case.estimated_duration = ai_analysis['estimated_duration']

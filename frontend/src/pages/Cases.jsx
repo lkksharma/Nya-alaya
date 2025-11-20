@@ -11,13 +11,18 @@ import {
 	Edit,
 	Trash2,
 	Eye,
+	MoreHorizontal,
+	Brain,
+	Clock
 } from "lucide-react";
-import { casesAPI, schedulesAPI } from "../services/api";
+import { casesAPI, schedulesAPI, judgesAPI } from "../services/api";
+import SearchBar from "../components/SearchBar";
 import "./Cases.css";
 
 const Cases = () => {
 	const [cases, setCases] = useState([]);
 	const [schedules, setSchedules] = useState([]);
+	const [judges, setJudges] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [showModal, setShowModal] = useState(false);
 	const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -34,6 +39,7 @@ const Cases = () => {
 	useEffect(() => {
 		fetchCases();
 		fetchSchedules();
+		fetchJudges();
 	}, []);
 
 	const fetchCases = async () => {
@@ -57,6 +63,15 @@ const Cases = () => {
 		}
 	};
 
+	const fetchJudges = async () => {
+		try {
+			const response = await judgesAPI.getAll();
+			setJudges(response.data);
+		} catch (error) {
+			console.error("Error fetching judges:", error);
+		}
+	};
+
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 
@@ -66,8 +81,6 @@ const Cases = () => {
 			description: formData.description.trim(),
 			filed_in: formData.filed_in,
 		};
-
-		console.log("📤 Sending case data:", dataToSend);
 
 		try {
 			setIsAnalyzing(true);
@@ -83,13 +96,7 @@ const Cases = () => {
 			await fetchCases();
 		} catch (error) {
 			console.error("Error saving case:", error);
-			console.error("Error response:", error.response?.data);
-
-			const errorMessage = error.response?.data
-				? JSON.stringify(error.response.data, null, 2)
-				: "Please check the form data.";
-
-			alert(`Error saving case:\n${errorMessage}`);
+			alert("Error saving case. Please check the form data.");
 		} finally {
 			setIsAnalyzing(false);
 		}
@@ -111,9 +118,8 @@ const Cases = () => {
 		setFormData({
 			case_number: caseItem.case_number,
 			case_type: caseItem.case_type,
+			description: caseItem.description || "", // Ensure description is handled
 			filed_in: caseItem.filed_in,
-			urgency: caseItem.urgency,
-			estimated_duration: caseItem.estimated_duration,
 		});
 		setShowModal(true);
 	};
@@ -123,14 +129,9 @@ const Cases = () => {
 		setFormData({
 			case_number: "",
 			case_type: "civil",
+			description: "",
 			filed_in: "",
-			urgency: 0.5,
-			estimated_duration: 60,
 		});
-	};
-
-	const getCaseSchedule = (caseId) => {
-		return schedules.find((s) => s.case === caseId);
 	};
 
 	const filteredCases = cases.filter((c) => {
@@ -144,522 +145,219 @@ const Cases = () => {
 
 	return (
 		<div className="cases-page">
-			{/* Page Header */}
-			<motion.div
-				className="page-header"
-				initial={{ opacity: 0, y: -20 }}
-				animate={{ opacity: 1, y: 0 }}
-			>
-				<div
-					className="upperBar"
-					style={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-						flexDirection: "column",
-					}}
-				>
-					<div
-						style={{
-							display: "flex",
-							justifyContent: "space-between",
-							alignItems: "center",
-							flexDirection: "row",
-						}}
+			<header className="page-header">
+				<div>
+					<motion.h1
+						initial={{ opacity: 0, y: -10 }}
+						animate={{ opacity: 1, y: 0 }}
 					>
-						<FileText size={32} />
-						<h1 className="page-title">
-							<div
-								style={{
-									paddingLeft: "10px",
-									paddingTop: "7px",
-								}}
-							>
-								Case Management
-							</div>
-						</h1>
-					</div>
-					<div>
-						<p className="page-subtitle">
-							Manage judges and view their schedules
-						</p>
-					</div>
+						Cases
+					</motion.h1>
+					<p className="text-secondary">Manage and track all legal cases</p>
 				</div>
-
 				<button
-					className="btn-primary"
+					className="btn btn-primary"
 					onClick={() => {
 						resetForm();
 						setShowModal(true);
 					}}
 				>
 					<Plus size={18} />
-					Add New Case
+					<span>New Case</span>
 				</button>
-			</motion.div>
+			</header>
 
-			{/* Filters */}
-			<motion.div
-				className="filters-section"
-				initial={{ opacity: 0 }}
-				animate={{ opacity: 1 }}
+			<motion.div 
+				className="toolbar-container"
+				initial={{ opacity: 0, y: 10 }}
+				animate={{ opacity: 1, y: 0 }}
 				transition={{ delay: 0.1 }}
 			>
-				<div className="search-box">
-					<Search size={20} />
-					<input
-						type="text"
-						placeholder="Search by case number..."
-						value={searchTerm}
-						onChange={(e) => setSearchTerm(e.target.value)}
-					/>
-				</div>
-
-				<div className="filter-group">
-					<Filter size={18} />
-					<select
-						value={filterType}
-						onChange={(e) => setFilterType(e.target.value)}
-						className="filter-select"
-					>
-						<option value="all">All Types</option>
-						<option value="civil">Civil</option>
-						<option value="criminal">Criminal</option>
-						<option value="family">Family</option>
-						<option value="other">Other</option>
-					</select>
-				</div>
+				<SearchBar 
+					value={searchTerm}
+					onChange={setSearchTerm}
+					onClear={() => setSearchTerm("")}
+					placeholder="Search cases by number..."
+					filterOptions={[
+						{ value: "all", label: "All Types" },
+						{ value: "civil", label: "Civil" },
+						{ value: "criminal", label: "Criminal" },
+						{ value: "family", label: "Family" },
+						{ value: "other", label: "Other" }
+					]}
+					selectedFilter={filterType}
+					onFilterChange={setFilterType}
+				/>
 			</motion.div>
 
-			{/* Cases Grid */}
-			{loading ? (
-				<div className="loading-container">
-					<motion.div
-						className="loader"
-						animate={{ rotate: 360 }}
-						transition={{
-							duration: 1,
-							repeat: Infinity,
-							ease: "linear",
-						}}
-					>
-						<FileText size={48} />
-					</motion.div>
-					<p>Loading cases...</p>
-				</div>
-			) : (
-				<div className="cases-grid">
-					{filteredCases.map((caseItem, index) => {
-						const schedule = getCaseSchedule(caseItem.id);
-						return (
+			<div className="cases-list">
+				{loading ? (
+					<div className="loading-state">
+						<div className="spinner"></div>
+						<p>Loading cases...</p>
+					</div>
+				) : filteredCases.length === 0 ? (
+					<div className="empty-state">
+						<FileText size={48} className="text-tertiary" />
+						<h3>No cases found</h3>
+						<p>Try adjusting your filters or add a new case.</p>
+					</div>
+				) : (
+					<div className="cases-grid">
+						{filteredCases.map((caseItem, index) => (
 							<motion.div
 								key={caseItem.id}
-								className="case-card"
+								className="case-card glass-panel"
 								initial={{ opacity: 0, y: 20 }}
 								animate={{ opacity: 1, y: 0 }}
 								transition={{ delay: index * 0.05 }}
-								whileHover={{ y: -5 }}
+								whileHover={{ y: -4 }}
 							>
-								<div className="case-card-header">
-									<div>
-										<h3 className="case-title">
-											{caseItem.case_number}
-										</h3>
-										<span
-											className={`case-badge type-${caseItem.case_type}`}
-										>
-											{caseItem.case_type}
-										</span>
+								<div className="case-header">
+									<div className="case-id">
+										<FileText size={16} />
+										<span>{caseItem.case_number}</span>
 									</div>
-									<div className="case-actions">
-										<button
-											className="icon-btn"
-											onClick={() => handleEdit(caseItem)}
-											title="Edit"
-										>
+									<div className="case-actions-menu">
+										<button onClick={() => handleEdit(caseItem)}>
 											<Edit size={16} />
 										</button>
-										<button
-											className="icon-btn delete"
-											onClick={() =>
-												handleDelete(caseItem.id)
-											}
-											title="Delete"
-										>
+										<button onClick={() => handleDelete(caseItem.id)} className="danger">
 											<Trash2 size={16} />
 										</button>
 									</div>
 								</div>
-
-								<div className="case-card-body">
-									<div className="case-detail">
-										<Calendar size={16} />
-										<span>
-											Filed:{" "}
-											{new Date(
-												caseItem.filed_in
-											).toLocaleDateString("en-IN")}
+								
+								<div className="case-body">
+									<div className="case-meta">
+										<span className={`badge type-${caseItem.case_type}`}>
+											{caseItem.case_type}
+										</span>
+										<span className="urgency-indicator">
+											<TrendingUp size={14} />
+											{(caseItem.urgency * 100).toFixed(0)}% Urgency
 										</span>
 									</div>
+									<p className="case-description-preview">
+										{caseItem.description || "No description provided."}
+									</p>
+								</div>
 
-									<div className="case-detail">
-										<TrendingUp size={16} />
-										<span>
-											Urgency:{" "}
-											{(caseItem.urgency * 100).toFixed(
-												0
-											)}
-											%
-										</span>
+								<div className="case-footer">
+									<div className="footer-item">
+										<Calendar size={14} />
+										<span>{new Date(caseItem.filed_in).toLocaleDateString()}</span>
 									</div>
-
-									<div className="case-metrics">
-										<div className="metric">
-											<span className="metric-label">
-												Duration
-											</span>
-											<span className="metric-value">
-												{caseItem.estimated_duration}{" "}
-												min
-											</span>
-										</div>
-										<div className="metric">
-											<span className="metric-label">
-												Priority
-											</span>
-											<span className="metric-value">
-												{(
-													caseItem.priority || 0
-												).toFixed(2)}
-											</span>
-										</div>
+									<div className="footer-item">
+										<Clock size={14} />
+										<span>{caseItem.estimated_duration} min</span>
 									</div>
-
-									{schedule && (
-										<div className="schedule-info-box">
-											<Eye size={14} />
-											<span>
-												Scheduled:{" "}
-												{new Date(
-													schedule.start_time
-												).toLocaleDateString(
-													"en-IN"
-												)}{" "}
-												at{" "}
-												{new Date(
-													schedule.start_time
-												).toLocaleTimeString("en-IN", {
-													hour: "2-digit",
-													minute: "2-digit",
-												})}
-											</span>
+									{caseItem.assigned_judge && (
+										<div className="footer-item judge-assignment">
+											<FileText size={14} />
+											<span>{judges.find(j => j.id === caseItem.assigned_judge)?.name || 'Judge assigned'}</span>
 										</div>
 									)}
 								</div>
 							</motion.div>
-						);
-					})}
+						))}
+					</div>
+				)}
+			</div>
 
-					{filteredCases.length === 0 && (
-						<div className="empty-state-full">
-							<FileText size={64} />
-							<h3>No cases found</h3>
-							<p>
-								{searchTerm || filterType !== "all"
-									? "Try adjusting your search or filters"
-									: 'Click "Add New Case" to create your first case'}
-							</p>
-						</div>
-					)}
-				</div>
-			)}
-
-			{/* Add/Edit Modal */}
 			<AnimatePresence>
 				{showModal && (
-					<motion.div
-						className="modal-overlay"
-						initial={{ opacity: 0 }}
-						animate={{ opacity: 1 }}
-						exit={{ opacity: 0 }}
-						onClick={() => setShowModal(false)}
-					>
+					<div className="modal-backdrop" onClick={() => setShowModal(false)}>
 						<motion.div
-							className="modal-content"
+							className="modal-container glass-panel"
+							onClick={(e) => e.stopPropagation()}
 							initial={{ scale: 0.9, opacity: 0 }}
 							animate={{ scale: 1, opacity: 1 }}
 							exit={{ scale: 0.9, opacity: 0 }}
-							onClick={(e) => e.stopPropagation()}
 						>
 							<div className="modal-header">
-								<h2>
-									{selectedCase
-										? "Edit Case"
-										: "Add New Case"}
-								</h2>
-								<button
-									className="close-btn"
-									onClick={() => setShowModal(false)}
-									disabled={isAnalyzing}
-								>
-									<X size={24} />
+								<h2>{selectedCase ? "Edit Case" : "New Case"}</h2>
+								<button onClick={() => setShowModal(false)}>
+									<X size={20} />
 								</button>
 							</div>
 
-							{/* AI Analysis Loading Overlay */}
 							{isAnalyzing && (
-								<div className="ai-analysis-overlay">
-									<div className="ai-analysis-content">
-										<motion.div
-											className="ai-brain-icon"
-											animate={{
-												scale: [1, 1.2, 1],
-												rotate: [0, 5, -5, 0],
-											}}
-											transition={{
-												duration: 2,
-												repeat: Infinity,
-												ease: "easeInOut",
-											}}
-										>
-											🧠
-										</motion.div>
-										<h3>AI Analysis in Progress</h3>
-										<p>
-											Our AI is analyzing your case
-											description to determine:
-										</p>
-										<ul>
-											<li>Case urgency level</li>
-											<li>Estimated hearing duration</li>
-											<li>Priority for scheduling</li>
-										</ul>
-										<motion.div
-											className="loading-dots"
-											initial={{ opacity: 0 }}
-											animate={{ opacity: 1 }}
-										>
-											<motion.span
-												animate={{
-													opacity: [0.3, 1, 0.3],
-												}}
-												transition={{
-													duration: 1.5,
-													repeat: Infinity,
-													delay: 0,
-												}}
-											>
-												●
-											</motion.span>
-											<motion.span
-												animate={{
-													opacity: [0.3, 1, 0.3],
-												}}
-												transition={{
-													duration: 1.5,
-													repeat: Infinity,
-													delay: 0.2,
-												}}
-											>
-												●
-											</motion.span>
-											<motion.span
-												animate={{
-													opacity: [0.3, 1, 0.3],
-												}}
-												transition={{
-													duration: 1.5,
-													repeat: Infinity,
-													delay: 0.4,
-												}}
-											>
-												●
-											</motion.span>
-										</motion.div>
-									</div>
+								<div className="ai-overlay">
+									<motion.div 
+										className="ai-icon"
+										animate={{ rotate: 360, scale: [1, 1.1, 1] }}
+										transition={{ duration: 2, repeat: Infinity }}
+									>
+										<Brain size={48} />
+									</motion.div>
+									<h3>AI Analysis in Progress</h3>
+									<p>Analyzing case details to determine urgency and duration...</p>
 								</div>
 							)}
 
-							<form onSubmit={handleSubmit} className="case-form">
+							<form onSubmit={handleSubmit} className="modal-form">
+								<div className="form-row">
+									<div className="form-group">
+										<label>Case Number</label>
+										<input
+											type="text"
+											required
+											value={formData.case_number}
+											onChange={(e) => setFormData({...formData, case_number: e.target.value})}
+											placeholder="e.g., CIV/2025/001"
+										/>
+									</div>
+									<div className="form-group">
+										<label>Type</label>
+										<select
+											value={formData.case_type}
+											onChange={(e) => setFormData({...formData, case_type: e.target.value})}
+										>
+											<option value="civil">Civil</option>
+											<option value="criminal">Criminal</option>
+											<option value="family">Family</option>
+											<option value="other">Other</option>
+										</select>
+									</div>
+								</div>
+
 								<div className="form-group">
-									<label htmlFor="case_number">
-										Case Number *
-									</label>
+									<label>Filed Date</label>
 									<input
-										id="case_number"
-										type="text"
-										required
-										value={formData.case_number}
-										onChange={(e) =>
-											setFormData({
-												...formData,
-												case_number: e.target.value,
-											})
-										}
-										placeholder="e.g., CIV/2025/001"
-									/>
-								</div>
-
-								<div className="form-group">
-									<label htmlFor="case_type">
-										Case Type *
-									</label>
-									<select
-										id="case_type"
-										required
-										value={formData.case_type}
-										onChange={(e) =>
-											setFormData({
-												...formData,
-												case_type: e.target.value,
-											})
-										}
-									>
-										<option value="civil">Civil</option>
-										<option value="criminal">
-											Criminal
-										</option>
-										<option value="family">Family</option>
-										<option value="other">Other</option>
-									</select>
-								</div>
-
-								{/* NEW: Case Description */}
-								<div className="form-group">
-									<label htmlFor="description">
-										Case Description *
-									</label>
-									<textarea
-										id="description"
-										required
-										rows="5"
-										value={formData.description}
-										onChange={(e) =>
-											setFormData({
-												...formData,
-												description: e.target.value,
-											})
-										}
-										placeholder="Describe the case details, parties involved, nature of dispute, evidence, etc. Our AI will analyze this to determine urgency and duration."
-										style={{
-											width: "100%",
-											padding: "0.75rem 1rem",
-											border: "1px solid var(--border)",
-											borderRadius: "8px",
-											fontSize: "0.95rem",
-											fontFamily: "inherit",
-											resize: "vertical",
-										}}
-									/>
-									<small
-										style={{
-											color: "var(--text-secondary)",
-											fontSize: "0.85rem",
-										}}
-									>
-										💡 Tip: Include details about urgency,
-										complexity, and expected witnesses for
-										better AI analysis
-									</small>
-								</div>
-
-								<div className="form-group">
-									<label htmlFor="filed_in">
-										Filed Date *
-									</label>
-									<input
-										id="filed_in"
 										type="date"
 										required
 										value={formData.filed_in}
-										onChange={(e) => {
-											console.log(
-												"Date selected:",
-												e.target.value
-											);
-											setFormData({
-												...formData,
-												filed_in: e.target.value,
-											});
-										}}
+										onChange={(e) => setFormData({...formData, filed_in: e.target.value})}
 									/>
 								</div>
 
-								<div
-									className="info-box"
-									style={{
-										background: "rgba(26, 77, 143, 0.05)",
-										border: "1px solid rgba(26, 77, 143, 0.2)",
-										borderRadius: "8px",
-										padding: "1rem",
-										marginBottom: "1.5rem",
-									}}
-								>
-									<p
-										style={{
-											margin: 0,
-											fontSize: "0.9rem",
-										}}
-									>
-										🤖 <strong>AI-Powered Analysis:</strong>{" "}
-										Based on your description, our AI will
-										automatically calculate:
-									</p>
-									<ul
-										style={{
-											marginTop: "0.5rem",
-											marginBottom: 0,
-											paddingLeft: "1.5rem",
-										}}
-									>
-										<li>
-											Urgency level (considering safety,
-											time-sensitivity)
-										</li>
-										<li>Estimated hearing duration</li>
-										<li>Case priority for scheduling</li>
-									</ul>
+								<div className="form-group">
+									<label>Description</label>
+									<textarea
+										required
+										rows="4"
+										value={formData.description}
+										onChange={(e) => setFormData({...formData, description: e.target.value})}
+										placeholder="Describe the case details..."
+									/>
+									<small className="hint">
+										<Brain size={12} />
+										AI will analyze this description to set priority and urgency.
+									</small>
 								</div>
 
-								<div className="form-actions">
-									<button
-										type="button"
-										className="btn-secondary"
-										onClick={() => setShowModal(false)}
-										disabled={isAnalyzing}
-									>
+								<div className="modal-actions">
+									<button type="button" className="btn btn-text" onClick={() => setShowModal(false)}>
 										Cancel
 									</button>
-									<button
-										type="submit"
-										className="btn-primary"
-										disabled={isAnalyzing}
-									>
-										{isAnalyzing ? (
-											<>
-												<motion.div
-													className="loading-spinner"
-													animate={{ rotate: 360 }}
-													transition={{
-														duration: 1,
-														repeat: Infinity,
-														ease: "linear",
-													}}
-												>
-													⚡
-												</motion.div>
-												Analyzing...
-											</>
-										) : selectedCase ? (
-											"Update Case"
-										) : (
-											"Create Case with AI Analysis"
-										)}
+									<button type="submit" className="btn btn-primary" disabled={isAnalyzing}>
+										{selectedCase ? "Update Case" : "Create & Analyze"}
 									</button>
 								</div>
 							</form>
 						</motion.div>
-					</motion.div>
+					</div>
 				)}
 			</AnimatePresence>
 		</div>
