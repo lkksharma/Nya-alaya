@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Background circle with gradient -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <circle cx="50" cy="50" r="48" fill="url(#bg)"/>
+  
+  <!-- Scales of Justice -->
+  <!-- Left pan -->
+  <ellipse cx="30" cy="45" rx="12" ry="3" fill="#fff" opacity="0.9"/>
+  <line x1="30" y1="45" x2="30" y2="35" stroke="#fff" stroke-width="2"/>
+  
+  <!-- Right pan -->
+  <ellipse cx="70" cy="45" rx="12" ry="3" fill="#fff" opacity="0.9"/>
+  <line x1="70" y1="45" x2="70" y2="35" stroke="#fff" stroke-width="2"/>
+  
+  <!-- Balance beam -->
+  <line x1="28" y1="35" x2="72" y2="35" stroke="#fff" stroke-width="2.5"/>
+  
+  <!-- Central pole -->
+  <line x1="50" y1="35" x2="50" y2="70" stroke="#fff" stroke-width="3"/>
+  
+  <!-- Base -->
+  <rect x="40" y="70" width="20" height="6" rx="2" fill="#fff"/>
+  
+  <!-- Gavel (small) -->
+  <rect x="58" y="60" width="8" height="3" rx="1" fill="#fbbf24" transform="rotate(-30 62 61.5)"/>
+  <line x1="62" y1="62" x2="67" y2="67" stroke="#fbbf24" stroke-width="1.5"/>
+</svg>

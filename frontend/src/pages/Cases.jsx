@@ -26,6 +26,7 @@ const Cases = () => {
 	const [loading, setLoading] = useState(true);
 	const [showModal, setShowModal] = useState(false);
 	const [isAnalyzing, setIsAnalyzing] = useState(false);
+	const [useAI, setUseAI] = useState(true); // AI toggle state
 	const [searchTerm, setSearchTerm] = useState("");
 	const [filterType, setFilterType] = useState("all");
 	const [selectedCase, setSelectedCase] = useState(null);
@@ -80,6 +81,7 @@ const Cases = () => {
 			case_type: formData.case_type,
 			description: formData.description.trim(),
 			filed_in: formData.filed_in,
+			use_ai: useAI, // Pass AI toggle to backend
 		};
 
 		try {
@@ -155,16 +157,27 @@ const Cases = () => {
 					</motion.h1>
 					<p className="text-secondary">Manage and track all legal cases</p>
 				</div>
-				<button
-					className="btn btn-primary"
-					onClick={() => {
-						resetForm();
-						setShowModal(true);
-					}}
-				>
-					<Plus size={18} />
-					<span>New Case</span>
-				</button>
+				<div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+					<button
+						className={`btn ${useAI ? 'btn-primary' : 'btn-secondary'}`}
+						onClick={() => setUseAI(!useAI)}
+						style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+						title={useAI ? 'AI with 30s timeout (faster)' : 'AI without timeout (slower, more accurate)'}
+					>
+						<Brain size={18} />
+						<span>{useAI ? '30s Timeout: ON' : '30s Timeout: OFF'}</span>
+					</button>
+					<button
+						className="btn btn-primary"
+						onClick={() => {
+							resetForm();
+							setShowModal(true);
+						}}
+					>
+						<Plus size={18} />
+						<span>New Case</span>
+					</button>
+				</div>
 			</header>
 
 			<motion.div 

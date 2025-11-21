@@ -16,10 +16,11 @@ except Exception as e:
 OLLAMA_MODEL = "tinyllama"
 
 
-def analyze_case_with_ai(case_number, case_type, description, filed_date):
+def analyze_case_with_ai(case_number, case_type, description, filed_date, timeout=30):
     """
-    Analyze case using local Ollama mistral:7b-instruct.
-    Falls back to rule-based if Ollama is unavailable or fails.
+    Analyze case using local Ollama tinyllama.
+    timeout: seconds before falling back (None = unlimited)
+    Falls back to enhanced rule-based if Ollama is unavailable, fails, or times out.
     """
     if not description or not description.strip():
         return analyze_case_rule_based(case_type, description)
@@ -58,18 +59,37 @@ Respond ONLY with strict JSON (no markdown, no extra text):
 
     if OLLAMA_AVAILABLE:
         try:
-            resp = ollama.chat(
-                model=OLLAMA_MODEL,
-                messages=[
-                    {"role": "system", "content": "Respond only with valid JSON. No markdown."},
-                    {"role": "user", "content": prompt},
-                ],
-                options={"temperature": 0.2},
-            )
-            result_text = resp["message"]["content"].strip()
-            return _normalize_json(result_text, case_type)
+            import signal
+            
+            def timeout_handler(signum, frame):
+                raise TimeoutError(f"AI analysis timed out after {timeout} seconds")
+            
+            # Set timeout only if specified
+            if timeout:
+                signal.signal(signal.SIGALRM, timeout_handler)
+                signal.alarm(timeout)
+            
+            try:
+                resp = ollama.chat(
+                    model=OLLAMA_MODEL,
+                    messages=[
+                        {"role": "system", "content": "Respond only with valid JSON. No markdown."},
+                        {"role": "user", "content": prompt},
+                    ],
+                    options={"temperature": 0.2},
+                )
+                if timeout:
+                    signal.alarm(0)  # Cancel timeout
+                result_text = resp["message"]["content"].strip()
+                return _normalize_json(result_text, case_type)
+            except TimeoutError as e:
+                if timeout:
+                    signal.alarm(0)  # Cancel timeout
+                print(f"AI analysis timed out for {case_number}. Falling back to enhanced rule-based.")
+                return analyze_case_rule_based(case_type, description)
+                
         except Exception as e:
-            print(f"Ollama failed: {e}. Falling back to rule-based.")
+            print(f"Ollama failed: {e}. Falling back to enhanced rule-based.")
 
     # Fallback
     return analyze_case_rule_based(case_type, description)
@@ -98,48 +118,120 @@ def _normalize_json(text: str, case_type: str):
 
 
 def analyze_case_rule_based(case_type, description):
-    """Rule-based fallback (simple heuristics)."""
+    """Enhanced rule-based fallback with sophisticated heuristics."""
+    
+    # Base values by case type
     base_urgency = {
-        'criminal': 0.8,
-        'family': 0.7,
-        'civil': 0.5,
-        'other': 0.4
+        'criminal': 0.75,
+        'family': 0.65,
+        'civil': 0.45,
+        'other': 0.35
     }.get(case_type, 0.5)
 
     base_duration = {
         'criminal': 90,
-        'family': 60,
-        'civil': 75,
-        'other': 60
+        'family': 75,
+        'civil': 60,
+        'other': 45
     }.get(case_type, 60)
 
     complexity = 'medium'
-
+    urgency_modifier = 0.0
+    duration_modifier = 0
+    
     if description:
         desc_lower = description.lower()
-
-        urgent_keywords = ['urgent', 'emergency', 'immediate', 'violence', 'danger',
-                           'bail', 'custody', 'domestic violence', 'habeas corpus']
-        if any(word in desc_lower for word in urgent_keywords):
-            base_urgency = min(1.0, base_urgency + 0.2)
+        
+        # HIGH URGENCY indicators (+0.15 to +0.35)
+        critical_keywords = {
+            'emergency': 0.35, 'immediate': 0.3, 'urgent': 0.25,
+            'bail': 0.3, 'habeas corpus': 0.35, 'life threat': 0.35,
+            'domestic violence': 0.3, 'child abuse': 0.35, 'danger': 0.25,
+            'custody': 0.2, 'injunction': 0.2, 'restraining': 0.2
+        }
+        
+        for keyword, boost in critical_keywords.items():
+            if keyword in desc_lower:
+                urgency_modifier = max(urgency_modifier, boost)
+        
+        # COMPLEXITY indicators
+        complex_indicators = [
+            'multiple parties', 'witnesses', 'expert testimony', 'forensic',
+            'extensive evidence', 'complex', 'cross-examination', 'appeal',
+            'precedent', 'constitutional', 'interpretation'
+        ]
+        
+        simple_indicators = [
+            'simple', 'straightforward', 'uncontested', 'agreed',
+            'minor', 'routine', 'procedural'
+        ]
+        
+        complex_count = sum(1 for ind in complex_indicators if ind in desc_lower)
+        simple_count = sum(1 for ind in simple_indicators if ind in desc_lower)
+        
+        if complex_count >= 2:
             complexity = 'high'
-
-        complex_keywords = ['complex', 'multiple parties', 'extensive evidence',
-                            'witnesses', 'cross-examination', 'expert testimony']
-        simple_keywords = ['simple', 'straightforward', 'minor', 'uncontested']
-
-        if any(word in desc_lower for word in complex_keywords):
-            base_duration += 30
-            complexity = 'high'
-        elif any(word in desc_lower for word in simple_keywords):
-            base_duration = max(30, base_duration - 15)
+            duration_modifier += 45
+        elif complex_count == 1:
+            complexity = 'medium'
+            duration_modifier += 20
+        elif simple_count >= 1:
             complexity = 'low'
-
+            duration_modifier -= 15
+        
+        # COUNT-BASED adjustments
+        # Count witnesses (adds 10 min per witness mentioned)
+        if 'witness' in desc_lower:
+            import re
+            # Look for numbers before "witness"
+            witness_match = re.search(r'(\d+)\s+witness', desc_lower)
+            if witness_match:
+                num_witnesses = int(witness_match.group(1))
+                duration_modifier += min(num_witnesses * 10, 60)  # Cap at +60 min
+        
+        # DURATION-SPECIFIC keywords
+        time_keywords = {
+            'brief': -15, 'quick': -10, 'lengthy': +30,
+            'detailed': +20, 'extensive': +30, 'summary': -20
+        }
+        
+        for keyword, time_mod in time_keywords.items():
+            if keyword in desc_lower:
+                duration_modifier += time_mod
+        
+        # SPECIAL CASE TYPES
+        special_cases = {
+            'murder': (0.3, 60, 'high'),
+            'rape': (0.35, 60, 'high'),
+            'kidnapping': (0.35, 45, 'high'),
+            'fraud': (0.1, 30, 'medium'),
+            'divorce': (0.0, -15, 'medium'),
+            'property dispute': (-0.1, 15, 'medium'),
+            'traffic': (-0.2, -20, 'low'),
+        }
+        
+        for case_term, (urg_mod, dur_mod, comp) in special_cases.items():
+            if case_term in desc_lower:
+                urgency_modifier = max(urgency_modifier, urg_mod)
+                duration_modifier += dur_mod
+                complexity = comp
+                break
+    
+    # Calculate final values
+    final_urgency = max(0.0, min(1.0, base_urgency + urgency_modifier))
+    final_duration = max(30, min(240, base_duration + duration_modifier))
+    
+    reasoning = f"Enhanced rule-based analysis: {case_type} case"
+    if urgency_modifier > 0:
+        reasoning += f" with high-priority indicators (urgency +{urgency_modifier:.2f})"
+    if complexity != 'medium':
+        reasoning += f", {complexity} complexity"
+    
     return {
-        'urgency': round(base_urgency, 2),
-        'estimated_duration': max(30, base_duration),
+        'urgency': round(final_urgency, 2),
+        'estimated_duration': final_duration,
         'complexity': complexity,
-        'reasoning': f'Rule-based analysis for {case_type} case (local model unavailable)'
+        'reasoning': reasoning
     }
 
 
