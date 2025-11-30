@@ -11,6 +11,31 @@ export const AuthProvider = ({ children }) => {
 
   // Configure axios defaults for credentials
   axios.defaults.withCredentials = true;
+  
+  // Function to get cookie by name
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  // Add interceptor to attach CSRF token to every request
+  axios.interceptors.request.use(config => {
+    const csrftoken = getCookie('csrftoken');
+    if (csrftoken) {
+      config.headers['X-CSRFToken'] = csrftoken;
+    }
+    return config;
+  }, error => Promise.reject(error));
   // Use relative URL if proxy is set up, or absolute if not. 
   // Based on settings.py CORS_ALLOWED_ORIGINS, backend is likely on same host or localhost:8000
   // Assuming Vite proxy is set up or we need to define base URL.
