@@ -10,7 +10,8 @@ const Login = () => {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
-    password: ''
+    password: '',
+    city: 'Delhi'
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +40,7 @@ const Login = () => {
       if (isLogin) {
         result = await login(formData.username, formData.password);
       } else {
-        result = await register(formData.username, formData.email, formData.password);
+        result = await register(formData.username, formData.email, formData.password, formData.city);
       }
 
       if (result.success) {
@@ -101,6 +102,23 @@ const Login = () => {
                   placeholder="Enter email"
                   required
                 />
+              </div>
+            </div>
+          )}
+
+          {!isLogin && (
+            <div className="form-group">
+              <label>City</label>
+              <div className="input-wrapper">
+                <select
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  className="city-select"
+                  required
+                >
+                  <option value="Delhi">Delhi</option>
+                </select>
               </div>
             </div>
           )}
