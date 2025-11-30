@@ -88,7 +88,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (username, email, password, city) => {
     try {
-      const response = await axios.post(`${API_URL}/auth/register/`, { username, email, password, city });
+      const response = await axios.post(`${API_URL}/auth/register/`, { username, email, password});
       setUser(response.data.user);
       return { success: true };
     } catch (error) {
