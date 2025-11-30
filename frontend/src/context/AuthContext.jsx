@@ -24,7 +24,9 @@ export const AuthProvider = ({ children }) => {
   // The backend urls.py has `path("api/", include("scheduler.urls"))` AND `path("", include("scheduler.urls"))`.
   // So `/auth/...` should work if hitting the root.
 
-  const API_URL = 'http://127.0.0.1:8000'; // Hardcoding for now based on typical Django dev server
+  const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'http://127.0.0.1:8000' 
+    : '/api';
 
   useEffect(() => {
     checkAuth();
