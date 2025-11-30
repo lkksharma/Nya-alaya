@@ -146,3 +146,56 @@ class ScheduleViewSet(viewsets.ModelViewSet):
     queryset = Schedule.objects.all()
     serializer_class = ScheduleSerializer
 
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+@csrf_exempt
+@api_view(['POST'])
+def register_view(request):
+    try:
+        data = request.data
+        username = data.get('username')
+        password = data.get('password')
+        email = data.get('email', '')
+
+        if not username or not password:
+            return Response({'error': 'Username and password are required'}, status=400)
+
+        if User.objects.filter(username=username).exists():
+            return Response({'error': 'Username already exists'}, status=400)
+
+        user = User.objects.create_user(username=username, password=password, email=email)
+        login(request, user)
+        return Response({'message': 'User registered and logged in successfully', 'user': {'username': user.username, 'email': user.email}})
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+@csrf_exempt
+@api_view(['POST'])
+def login_view(request):
+    data = request.data
+    username = data.get('username')
+    password = data.get('password')
+
+    user = authenticate(request, username=username, password=password)
+    if user is not None:
+        login(request, user)
+        return Response({'message': 'Login successful', 'user': {'username': user.username, 'email': user.email}})
+    else:
+        return Response({'error': 'Invalid credentials'}, status=400)
+
+@api_view(['POST'])
+def logout_view(request):
+    logout(request)
+    return Response({'message': 'Logged out successfully'})
+
+@api_view(['GET'])
+def check_auth_view(request):
+    if request.user.is_authenticated:
+        return Response({'isAuthenticated': True, 'user': {'username': request.user.username, 'email': request.user.email}})
+    else:
+        return Response({'isAuthenticated': False})
+
+

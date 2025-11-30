@@ -1,9 +1,13 @@
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { LayoutDashboard, FileText, Scale, Users, ArrowRight, Gavel, Shield, BookOpen } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import './Tools.css';
 
 const Tools = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   const tools = [
     {
       id: 'dashboard',
@@ -49,6 +53,14 @@ const Tools = () => {
     { title: 'Security', icon: Shield },
   ];
 
+  const handleToolClick = (link) => {
+    if (!user) {
+      navigate('/login', { state: { from: { pathname: link } } });
+    } else {
+      navigate(link);
+    }
+  };
+
   return (
     <div className="tools-page">
       <div className="tools-header-section">
@@ -87,6 +99,8 @@ const Tools = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
               whileHover={{ y: -8, scale: 1.01 }}
+              onClick={() => handleToolClick(tool.link)}
+              style={{ cursor: 'pointer' }}
             >
               <div className={`card-bg-pattern ${tool.bgPattern}`}></div>
               <div className="tool-content-wrapper">
@@ -94,9 +108,9 @@ const Tools = () => {
                   <div className="tool-icon-box">
                     <Icon size={32} />
                   </div>
-                  <Link to={tool.link} className="tool-action-btn">
+                  <button className="tool-action-btn">
                     <ArrowRight size={20} />
-                  </Link>
+                  </button>
                 </div>
                 
                 <div className="tool-info">

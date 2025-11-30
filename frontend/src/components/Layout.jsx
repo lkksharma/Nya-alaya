@@ -12,14 +12,12 @@ import {
   Gavel,
   Menu,
   X,
-  Search
+  Search,
+  LogOut,
+  User as UserIcon
 } from 'lucide-react';
 import './Layout.css';
-
-/* Add these styles to Layout.css via a separate tool call or append here if possible. 
-   Since I can't append to a different file in this tool call, I'll assume I need to update Layout.css next.
-   For now, I'll just update the import.
-*/
+import { useAuth } from '../context/AuthContext';
 
 const navItems = [
   { path: '/', name: 'Home', icon: Home, theme: 'var(--bg-body)' },
@@ -31,6 +29,7 @@ const navItems = [
 const Layout = ({ children }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, logout } = useAuth();
   
   const currentTheme = navItems.find(item => item.path === location.pathname)?.theme || 'var(--bg-body)';
 
@@ -106,6 +105,45 @@ const Layout = ({ children }) => {
           </nav>
 
           <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            {/* Auth Buttons */}
+            {user ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                  Hi, {user.username}
+                </span>
+                <button 
+                  onClick={logout}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--text-secondary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                  title="Logout"
+                >
+                  <LogOut size={18} />
+                </button>
+              </div>
+            ) : (
+              <Link 
+                to="/login"
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '8px',
+                  background: 'var(--primary)',
+                  color: 'white',
+                  textDecoration: 'none',
+                  fontSize: '0.9rem',
+                  fontWeight: 500
+                }}
+              >
+                Login
+              </Link>
+            )}
+
             <button 
               className="search-trigger-btn"
               onClick={() => setSearchOpen(true)}

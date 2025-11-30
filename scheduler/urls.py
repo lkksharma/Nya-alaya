@@ -13,4 +13,8 @@ urlpatterns = [
     path('', include(router.urls)),
     path("dashboard/", dashboard, name="dashboard"),
     path("regenerate/", regenerate, name="regenerate"),
+    path("auth/register/", register_view, name="register"),
+    path("auth/login/", login_view, name="login"),
+    path("auth/logout/", logout_view, name="logout"),
+    path("auth/check/", check_auth_view, name="check_auth"),
 ]

@@ -41,8 +41,9 @@ const Home = () => {
           <HeroVisual />
         </div>
       </section>
+      <hr className="section-divider" />
 
-      {/* Features Section - Full Width Grid */}
+      <SchedulingGraphic />
       <section className="features-section">
         <div className="features-grid">
           <motion.div 
@@ -90,8 +91,7 @@ const Home = () => {
           </motion.div>
         </div>
       </section>
-
-      {/* How It Works Section */}
+      <hr className="section-divider" />
       <section className="how-it-works-section">
         <motion.h2 
           className="section-title"
@@ -157,9 +157,6 @@ const Home = () => {
           ))}
         </div>
       </section>
-
-      {/* Interactive Scheduling Graphic */}
-      <SchedulingGraphic />
     </div>
   );
 };

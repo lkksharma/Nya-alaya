@@ -10,6 +10,10 @@ import About from './pages/About';
 import Tools from './pages/Tools';
 import './App.css';
 
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import Login from './pages/Login';
+
 const AnimatedRoutes = () => {
   const location = useLocation();
 
@@ -17,9 +21,17 @@ const AnimatedRoutes = () => {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/about" element={<About />} />
         <Route path="/tools" element={<Tools />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
         <Route path="/cases" element={<Cases />} />
         <Route path="/judges" element={<Judges />} />
         <Route path="/lawyers" element={<Lawyers />} />
@@ -30,11 +42,13 @@ const AnimatedRoutes = () => {
 
 function App() {
   return (
-    <Router>
-      <Layout>
-        <AnimatedRoutes />
-      </Layout>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Layout>
+          <AnimatedRoutes />
+        </Layout>
+      </Router>
+    </AuthProvider>
   );
 }
 
