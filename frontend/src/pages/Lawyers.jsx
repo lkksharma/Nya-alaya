@@ -141,7 +141,7 @@ const Lawyers = () => {
                   </div>
                   <div className="contact-item">
                     <Phone size={12} />
-                    <span>{lawyer.phone || "+91 98765 43210"}</span>
+                    <span>{lawyer.phone_number || "+91 98765 43210"}</span>
                   </div>
                 </div>
                 <div className="col-cases">

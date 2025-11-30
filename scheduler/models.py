@@ -17,6 +17,7 @@ class Judge(models.Model):
     max_daily_cases = models.IntegerField(default=8)
     availability = models.JSONField(default=list)
     working_hours = models.JSONField(default=dict)  # 3:30 PM to 7:00 PM
+    phone_number = models.CharField(max_length=20, blank=True, null=True)  # NEW: Phone number
 
     def __str__(self):
         return f"{self.name} ({self.court} - {self.specialization})"
@@ -36,6 +37,7 @@ class Lawyer(models.Model):
     hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     busy_slots = models.JSONField(default=list)
     max_cases = models.IntegerField(default=10)  # Max concurrent cases
+    phone_number = models.CharField(max_length=20, blank=True, null=True)  # NEW: Phone number
 
     def __str__(self):
         return f"{self.name} ({self.specialization})"

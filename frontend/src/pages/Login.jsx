@@ -11,7 +11,8 @@ const Login = () => {
     username: '',
     email: '',
     password: '',
-    city: 'Delhi'
+    city: 'Delhi',
+    phone_number: ''
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -40,7 +41,7 @@ const Login = () => {
       if (isLogin) {
         result = await login(formData.username, formData.password);
       } else {
-        result = await register(formData.username, formData.email, formData.password, formData.city);
+        result = await register(formData.username, formData.email, formData.password, formData.city, formData.phone_number);
       }
 
       if (result.success) {
@@ -119,6 +120,22 @@ const Login = () => {
                 >
                   <option value="Delhi">Delhi</option>
                 </select>
+              </div>
+            </div>
+          )}
+
+          {!isLogin && (
+            <div className="form-group">
+              <label>Phone Number</label>
+              <div className="input-wrapper">
+                <input
+                  type="tel"
+                  name="phone_number"
+                  value={formData.phone_number}
+                  onChange={handleChange}
+                  placeholder="Enter phone number"
+                  required
+                />
               </div>
             </div>
           )}

@@ -131,7 +131,7 @@ const Judges = () => {
                 </div>
                 <div className="detail-item">
                   <Phone size={14} />
-                  <span>{judge.phone || "+91 98765 43210"}</span>
+                  <span>{judge.phone_number || "+91 98765 43210"}</span>
                 </div>
               </div>
 

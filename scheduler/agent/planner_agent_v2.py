@@ -245,6 +245,24 @@ class HybridPlannerAgent:
             case.save()
             saved_count += 1
             
+            # Send SMS Notifications
+            from scheduler.tools.sms_utils import send_sms
+            
+            msg_body = f"New Schedule: Case {case.case_number} on {start_time.strftime('%Y-%m-%d %H:%M')} at {judge.court}."
+            
+            print(f"Attempting to send SMS for Case {case.case_number}...")
+            if judge.phone_number:
+                print(f"Sending to Judge {judge.name} ({judge.phone_number})")
+                send_sms(judge.phone_number, f"Judge {judge.name}: {msg_body}")
+            else:
+                print(f"Judge {judge.name} has no phone number.")
+                
+            if lawyer.phone_number:
+                print(f"Sending to Lawyer {lawyer.name} ({lawyer.phone_number})")
+                send_sms(lawyer.phone_number, f"Lawyer {lawyer.name}: {msg_body}")
+            else:
+                print(f"Lawyer {lawyer.name} has no phone number.")
+            
         print(f"Finalized and saved {saved_count} schedules.")
 
     def run(self):
