@@ -15,10 +15,9 @@
 .header-content h1 {
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
-  background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  background: none;
+  color: var(--primary-800);
+  -webkit-text-fill-color: initial;
 }
 
 .header-content p {
@@ -78,29 +77,29 @@
 .card-bg-pattern {
   position: absolute;
   inset: 0;
-  opacity: 0.4;
+  opacity: 0.5;
   z-index: 0;
-  transition: opacity 0.3s ease;
+  /* Removed transition for solid feel */
 }
 
 .tool-card:hover .card-bg-pattern {
-  opacity: 0.6;
+  opacity: 0.8;
 }
 
 .pattern-1 {
-  background-image: radial-gradient(circle at 100% 0%, var(--primary-100) 0%, transparent 50%);
+  background-color: var(--primary-50);
 }
 
 .pattern-2 {
-  background-image: radial-gradient(circle at 100% 0%, #dcfce7 0%, transparent 50%);
+  background-color: #f0fdf4;
 }
 
 .pattern-3 {
-  background-image: radial-gradient(circle at 100% 0%, #fef9c3 0%, transparent 50%);
+  background-color: #fefce8;
 }
 
 .pattern-4 {
-  background-image: radial-gradient(circle at 100% 0%, #dbeafe 0%, transparent 50%);
+  background-color: #eff6ff;
 }
 
 .tool-content-wrapper {
