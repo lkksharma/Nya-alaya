@@ -47,11 +47,11 @@ const Tools = () => {
     }
   ];
 
-  const quickLinks = [
-    { title: 'Court Rules', icon: Gavel },
-    { title: 'Legal Code', icon: BookOpen },
-    { title: 'Security', icon: Shield },
-  ];
+  // const quickLinks = [
+  //   { title: 'Court Rules', icon: Gavel },
+  //   { title: 'Legal Code', icon: BookOpen },
+  //   { title: 'Security', icon: Shield },
+  // ];
 
   const handleToolClick = (link) => {
     if (!user) {
@@ -73,19 +73,6 @@ const Tools = () => {
           <p>Select a tool to manage court operations and access legal resources</p>
         </motion.div>
         
-        <motion.div 
-          className="quick-links"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          {quickLinks.map((link, i) => (
-            <button key={i} className="quick-link-btn glass-panel">
-              <link.icon size={16} />
-              <span>{link.title}</span>
-            </button>
-          ))}
-        </motion.div>
       </div>
 
       <div className="tools-grid">

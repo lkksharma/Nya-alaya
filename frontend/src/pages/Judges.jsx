@@ -13,6 +13,32 @@ const Judges = () => {
   const [showSchedule, setShowSchedule] = useState(false);
   const [judgeSchedules, setJudgeSchedules] = useState([]);
   const [loadingSchedules, setLoadingSchedules] = useState(false);
+  
+  // Add Judge State
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newJudge, setNewJudge] = useState({
+    name: "",
+    court: "",
+    specialization: "general",
+    phone_number: ""
+  });
+
+  const handleCreateJudge = async (e) => {
+    e.preventDefault();
+    setCreating(true);
+    try {
+      await judgesAPI.create(newJudge);
+      setShowAddModal(false);
+      setNewJudge({ name: "", court: "", specialization: "general", phone_number: "" });
+      fetchJudges(); // Refresh list
+    } catch (error) {
+      console.error("Error creating judge:", error);
+      alert("Failed to create judge. Please try again.");
+    } finally {
+      setCreating(false);
+    }
+  };
 
   useEffect(() => {
     fetchJudges();
@@ -79,7 +105,7 @@ const Judges = () => {
           </motion.h1>
           <p className="text-secondary">Manage judicial profiles and assignments</p>
         </div>
-        <button className="btn btn-primary">
+        <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
           <Plus size={18} />
           <span>Add Judge</span>
         </button>
@@ -151,6 +177,80 @@ const Judges = () => {
           ))}
         </div>
       )}
+
+      {/* Add Judge Modal */}
+      <AnimatePresence>
+        {showAddModal && (
+          <div className="modal-backdrop" onClick={() => setShowAddModal(false)}>
+            <motion.div
+              className="modal-container glass-panel"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+            >
+              <div className="modal-header">
+                <h2>Add New Judge</h2>
+                <button onClick={() => setShowAddModal(false)}>
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="modal-body">
+                <form onSubmit={handleCreateJudge} className="add-form">
+                  <div className="form-group">
+                    <label>Name</label>
+                    <input
+                      type="text"
+                      value={newJudge.name}
+                      onChange={(e) => setNewJudge({...newJudge, name: e.target.value})}
+                      required
+                      placeholder="e.g. Justice A.K. Sikri"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Court Room</label>
+                    <input
+                      type="text"
+                      value={newJudge.court}
+                      onChange={(e) => setNewJudge({...newJudge, court: e.target.value})}
+                      required
+                      placeholder="e.g. Court Room 1"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Specialization</label>
+                    <select
+                      value={newJudge.specialization}
+                      onChange={(e) => setNewJudge({...newJudge, specialization: e.target.value})}
+                    >
+                      <option value="general">General</option>
+                      <option value="civil">Civil</option>
+                      <option value="criminal">Criminal</option>
+                      <option value="family">Family</option>
+                      <option value="commercial">Commercial</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Phone Number</label>
+                    <input
+                      type="tel"
+                      value={newJudge.phone_number}
+                      onChange={(e) => setNewJudge({...newJudge, phone_number: e.target.value})}
+                      placeholder="+91..."
+                    />
+                  </div>
+                  <div className="form-actions">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>Cancel</button>
+                    <button type="submit" className="btn btn-primary" disabled={creating}>
+                      {creating ? "Adding..." : "Add Judge"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Schedule Modal */}
       <AnimatePresence>

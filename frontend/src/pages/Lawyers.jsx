@@ -15,6 +15,31 @@ const Lawyers = () => {
   const [loadingCases, setLoadingCases] = useState(false);
   const [lawyerCaseCounts, setLawyerCaseCounts] = useState({});
 
+  // Register Lawyer State
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [registering, setRegistering] = useState(false);
+  const [newLawyer, setNewLawyer] = useState({
+    name: "",
+    specialization: "general",
+    phone_number: ""
+  });
+
+  const handleRegisterLawyer = async (e) => {
+    e.preventDefault();
+    setRegistering(true);
+    try {
+      await lawyersAPI.create(newLawyer);
+      setShowRegisterModal(false);
+      setNewLawyer({ name: "", specialization: "general", phone_number: "" });
+      fetchLawyers(); // Refresh list
+    } catch (error) {
+      console.error("Error registering lawyer:", error);
+      alert("Failed to register lawyer. Please try again.");
+    } finally {
+      setRegistering(false);
+    }
+  };
+
   useEffect(() => {
     fetchLawyers();
   }, []);
@@ -80,7 +105,7 @@ const Lawyers = () => {
           </motion.h1>
           <p className="text-secondary">Directory of registered lawyers</p>
         </div>
-        <button className="btn btn-primary">
+        <button className="btn btn-primary" onClick={() => setShowRegisterModal(true)}>
           <Plus size={18} />
           <span>Register Lawyer</span>
         </button>
@@ -166,6 +191,70 @@ const Lawyers = () => {
           </div>
         </div>
       )}
+
+      {/* Register Lawyer Modal */}
+      <AnimatePresence>
+        {showRegisterModal && (
+          <div className="modal-backdrop" onClick={() => setShowRegisterModal(false)}>
+            <motion.div
+              className="modal-container glass-panel"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+            >
+              <div className="modal-header">
+                <h2>Register New Lawyer</h2>
+                <button onClick={() => setShowRegisterModal(false)}>
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="modal-body">
+                <form onSubmit={handleRegisterLawyer} className="add-form">
+                  <div className="form-group">
+                    <label>Name</label>
+                    <input
+                      type="text"
+                      value={newLawyer.name}
+                      onChange={(e) => setNewLawyer({...newLawyer, name: e.target.value})}
+                      required
+                      placeholder="e.g. Advocate Rajesh Kumar"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Specialization</label>
+                    <select
+                      value={newLawyer.specialization}
+                      onChange={(e) => setNewLawyer({...newLawyer, specialization: e.target.value})}
+                    >
+                      <option value="general">General Practice</option>
+                      <option value="civil">Civil Law</option>
+                      <option value="criminal">Criminal Defense</option>
+                      <option value="corporate">Corporate Law</option>
+                      <option value="family">Family Law</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Phone Number</label>
+                    <input
+                      type="tel"
+                      value={newLawyer.phone_number}
+                      onChange={(e) => setNewLawyer({...newLawyer, phone_number: e.target.value})}
+                      placeholder="+91..."
+                    />
+                  </div>
+                  <div className="form-actions">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowRegisterModal(false)}>Cancel</button>
+                    <button type="submit" className="btn btn-primary" disabled={registering}>
+                      {registering ? "Registering..." : "Register Lawyer"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Schedule Modal */}
       <AnimatePresence>
